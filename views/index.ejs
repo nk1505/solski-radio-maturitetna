@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Šolski radio</title>
+  <meta charset="UTF-8">
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <!--<script type="text/javascript" src="semantic/out/semantic.min.js"></script>-->
+  <!--<link media="screen" rel="stylesheet" type="text/css" href="semantic/out/semantic.min.css">-->
+
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.js"></script>
+  <link rel="stylesheet" media="screen" href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.css">
+  <!--<link rel="stylesheet" media="screen" href="css/index.css">-->
+
+  <link rel="shortcut icon" type="image/png" href="images/kujira.jpg">
+</head>
+<body>
+  <nav class="ui inverted black menu">
+    <header class="header item"> <a href="/"> Šolski radio </a> </header>
+    <div class="right menu">
+      <!--<a class="item" href="/signup"> Signup</a>-->
+      <a class="item" href="/data">  Data</a>
+      <% if (user) { %>
+        <a class="item" href="/upload">  Nalaganje</a>
+        <a class="item" href="/settings">  <%= user.name %></a>
+        <a class="item" href="/logout"> Logout</a>
+      <% } else { %>
+        <a class="item" href="/login"> Login</a>
+      <% } %>
+    </div>
+  </nav>
+<section class="ui container">
+    <h1>Dobrodošli na šolskem radiu</h1>
+
+    <i class="massive privacy icon"></i><i class="massive lock icon"></i>
+    <i class="massive privacy icon"></i><i class="massive lock icon"></i>
+</section>
+<script>
+  $(document).ready(function () {
+    $('.ui.dropdown').dropdown({ on: 'hover' });
+  });
+</script>
+</body>
+</html>
