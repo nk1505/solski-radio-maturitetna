@@ -12,6 +12,7 @@ import expressSession from 'express-session';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { readdir } from 'fs/promises';
 import mysql from 'mysql2';
 const app = express();
 
@@ -29,17 +30,29 @@ const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, uploadDir);
     },
-    filename: function (req, file, cb) {
+    filename: async function (req, file, cb) {
         const fileExtension = path.extname(file.originalname).toLowerCase();
 
         if (fileExtension !== '.mp3') {
             return cb(new Error('Samo .mp3 datoteke so dovoljene!'), null);
         }
 
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + fileExtension);
+        const artist = req.body.artist || 'UnknownArtist';
+        const songName = req.body.songName || 'UnknownSong';
+        const fileName = `${artist} - ${songName}${fileExtension}`;
+
+        // Preveri, ali datoteka s tem imenom že obstaja
+        try {
+            await fs.promises.access(path.join(uploadDir, fileName));
+            // Datoteka že obstaja
+            return cb(new Error('Datoteka s tem imenom že obstaja! Izberite drugo ime.'), null);
+        } catch (err) {
+            // Datoteka ne obstaja, nadaljuj s trenutnim imenom
+            cb(null, fileName);
+        }
     }
 });
+
 
 const upload = multer({ storage: storage });
 
@@ -120,13 +133,25 @@ var checkAuthenticated = (req, res, next) => {
     res.redirect("/login")
 }
 
-app.use('/music', express.static('uploads'));
+app.use('/music', checkAuthenticated ,express.static('uploads'));
 
 app.get('/upload', checkAuthenticated, (req, res) => {
     res.render('upload', { user: req.user });
 });
 
 app.post('/upload', checkAuthenticated, upload.single('musicFile'), (req, res) => {
+    // Preveri, ali je uporabnik vpisal ime skladbe
+    const songName = req.body.songName;
+    if (!songName) {
+        return res.status(400).json({ error: 'Vpišite ime skladbe.' });
+    }
+
+    // Preveri, ali je uporabnik vpisal izvajatelja
+    const artist = req.body.artist;
+    if (!artist) {
+        return res.status(400).json({ error: 'Vpišite izvajatelja.' });
+    }
+
     if (req.fileValidationError) {
         return res.status(400).json({ error: req.fileValidationError });
     }
@@ -139,6 +164,49 @@ app.post('/upload', checkAuthenticated, upload.single('musicFile'), (req, res) =
 
     res.json({ message: 'Datoteka je bila uspešno naložena.', file });
 });
+
+app.get('/library', checkAuthenticated,async (req, res) => {
+    try {
+        const files = await readdir(uploadDir);
+        console.log(files);
+        const songs = files
+            .filter(file => file.endsWith('.mp3'))
+            .map(file => ({ name: file }));
+
+        res.render('shramba', { songs, user: req.user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Dodajmo končno točko za izbris pesmi
+app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
+    try {
+        const songName = decodeURIComponent(req.params.songName);
+        console.log(songName);
+
+        const filePath = path.join(uploadDir, songName);
+
+        // Preveri, ali datoteka obstaja
+        await fs.promises.access(filePath);
+
+        // Izbriši datoteko
+        await fs.promises.unlink(filePath);
+
+        res.json({ message: 'Pesem uspešno izbrisana.' });
+    } catch (err) {
+        console.error(err);
+        if (err.code === 'ENOENT') {
+            res.status(404).json({ error: 'Datoteka ne obstaja.' });
+        } else {
+            res.status(500).json({ error: 'Napaka pri brisanju pesmi.' });
+        }
+    }
+});
+
+
+
 
 app.get('/data', (req, res) => {
     if(req.user){

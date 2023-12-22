@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Šolski radio</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="shortcut icon" type="image/png" href="images/kujira.jpg">
   <style>
     body {
@@ -30,18 +29,6 @@
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .feature-box {
-      display: flex;
-      align-items: center;
-      margin-top: 20px;
-      cursor: pointer;
-    }
-
-    .feature-icon {
-      font-size: 2em;
-      margin-right: 15px;
     }
 
     audio {
@@ -68,10 +55,9 @@
       background-color: transparent;
     }
 
-    button.ui.red.button {
+    button.ui.red.button,
+    button.ui.blue.button {
       margin-top: 10px;
-      background-color: #ff6363;
-      color: white;
     }
 
     /* Dodatki za sodobnejši izgled predvajalnika */
@@ -106,28 +92,79 @@
     </div>
   </nav>
   <section class="ui container">
-    <h1 class="ui dividing header">Dobrodošli na šolskem radiu</h1>
-    <div class="feature-box" onclick="window.location.href='/upload'">
-      <i class="circular massive upload icon feature-icon"></i>
-      <div>
-        <h2>Nalaganje Glasbe</h2>
-        <p>Naložite svoje najljubše pesmi in prispevajte k naši glasbeni zbirki.</p>
-      </div>
+    <h1 class="ui dividing header">Naložene pesmi</h1>
+
+    <div class="search-container ui input">
+      <input type="text" id="searchInput" placeholder="Išči...">
     </div>
-    <div class="feature-box" onclick="window.location.href='/library'">
-      <i class="circular massive book icon feature-icon"></i>
-      <div>
-        <h2>Knjižnica</h2>
-        <p>Raziščite našo glasbeno knjižnico s številnimi naloženimi pesmimi.</p>
+    
+
+      
+
+    <% songs.forEach(song => { %>
+      <div class="ui segment">
+        <h3 class="ui header"><%= song.name %></h3>
+        <audio controls>
+          <source src="/music/<%= encodeURIComponent(song.name) %>" type="audio/mp3">
+          Your browser does not support the audio element.
+        </audio>
+        <button class="ui blue button" onclick="addToPlaylist('<%= encodeURIComponent(song.name) %>')">Dodaj na playlisto</button>
+        <button class="ui red button" onclick="deleteSong('<%= encodeURIComponent(song.name) %>')">Izbriši</button>
       </div>
-    </div>
+    <% }); %>
   </section>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.js"></script>
   <script>
     $(document).ready(function () {
       $('.ui.dropdown').dropdown({ on: 'hover' });
+
+      // Dodaj iskanje
+      $('#searchInput').on('input', function () {
+        filterSongs($(this).val());
+      });
+
+      function filterSongs(query) {
+        query = query.toLowerCase();
+        $('.ui.segment').each(function () {
+          var songName = $(this).find('.ui.header').text().toLowerCase();
+          if (songName.includes(query)) {
+            $(this).show();
+          } else {
+            $(this).hide();
+          }
+        });
+      }
     });
+
+    function deleteSong(songName) {
+      // Izvedi API klic za izbris pesmi
+      $.ajax({
+        url: `/delete-song/${encodeURIComponent(songName)}`,
+        type: 'DELETE',
+        success: function (data) {
+          console.log(data.message);
+          // Ponovno naloži stran ali izvedi dodatne korake po potrebi
+          location.reload();
+        },
+        error: function (error) {
+          console.error('Napaka pri izbrisu pesmi:', error.responseJSON.error);
+          // Obvesti uporabnika o napaki po potrebi
+        }
+      });
+    }
+
+    function addToPlaylist(songName) {
+      // Izvedi API klic za dodajanje pesmi na seznam predvajanja
+      $.post(`/add-to-playlist/${encodeURIComponent(songName)}`, function (data) {
+        console.log(data.message);
+        // Dodaj dodatne korake po potrebi
+      })
+        .fail(function (error) {
+          console.error('Napaka pri dodajanju pesmi na seznam predvajanja:', error.responseJSON.error);
+          // Obvesti uporabnika o napaki po potrebi
+        });
+    }
   </script>
 </body>
 
