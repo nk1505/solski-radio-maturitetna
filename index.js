@@ -14,6 +14,7 @@ import path from 'path';
 import fs from 'fs';
 import { readdir } from 'fs/promises';
 import mysql from 'mysql2';
+import WebRadio from 'express-web-radio';
 const app = express();
 
 //? Nastavimo EJS za naš view engine
@@ -173,7 +174,7 @@ app.get('/library', checkAuthenticated,async (req, res) => {
             .filter(file => file.endsWith('.mp3'))
             .map(file => ({ name: file }));
 
-        res.render('shramba', { songs, user: req.user });
+        res.render('library', { songs, user: req.user });
     } catch (err) {
         console.error(err);
         res.status(500).send('Internal Server Error');
@@ -205,8 +206,41 @@ app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
     }
 });
 
-
-
+app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
+    const songName = decodeURIComponent(req.params.songName);
+  
+    // Preveri, ali datoteka obstaja v mapi uploads
+    const filePath = path.join(process.cwd(), 'uploads', songName);
+  
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Datoteka ne obstaja.' });
+    }
+  
+    // Dodaj ime skladbe v tabelo
+    const query = 'INSERT INTO playlist (filename) VALUES (?)';
+    db.query(query, [songName], (error, results) => {
+      if (error) {
+        console.error('Napaka pri dodajanju pesmi v tabelo:', error);
+        res.status(500).json({ error: 'Napaka pri dodajanju pesmi v tabelo' });
+      } else {
+        console.log('Pesem uspešno dodana v tabelo.');
+        res.status(200).json({ message: 'Pesem uspešno dodana v tabelo.' });
+      }
+    });
+});
+  
+const radio = new WebRadio({
+    audioDirectory: "./uploads", // Set the directory where audio files are stored
+    loop: true, // Loop the audio files
+    shuffle: true, // Shuffle the play order of the audio files
+    logFn: (msg) => console.log(`[Radio]: ${msg}`), // Log radio messages to the console
+});
+  
+radio.start(); // Start the radio stream
+app.get("/stream", radio.connect()); // Allow clients to connect to the radio stream
+app.get('/radio', (req, res) => {
+    res.render('radio');
+});
 
 app.get('/data', (req, res) => {
     if(req.user){
