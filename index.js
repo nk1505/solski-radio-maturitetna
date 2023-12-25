@@ -26,6 +26,12 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
+//? Po potrebi ustvarimo mapo za nalaganje glasbe
+const playingDir = 'playing';
+if (!fs.existsSync(playingDir)) {
+    fs.mkdirSync(playingDir);
+}
+
 //? Funkcija, ki pomaga pri nalaganju in preimenovanju datoteke
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -206,7 +212,7 @@ app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
     }
 });
 
-app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
+/* app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
     const songName = decodeURIComponent(req.params.songName);
   
     // Preveri, ali datoteka obstaja v mapi uploads
@@ -227,20 +233,79 @@ app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
         res.status(200).json({ message: 'Pesem uspešno dodana v tabelo.' });
       }
     });
-});
+}); */
+
+app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
+    const songName = decodeURIComponent(req.params.songName);
   
+    // Preveri, ali datoteka obstaja v mapi uploads
+    const sourceFilePath = path.join(process.cwd(), 'uploads', songName);
+  
+    if (!fs.existsSync(sourceFilePath)) {
+        return res.status(404).json({ error: 'Datoteka ne obstaja.' });
+    }
+
+    const destinationDirectory = path.join(process.cwd(), 'playing');
+    const destinationFilePath = path.join(destinationDirectory, songName);
+
+    // Preveri, ali datoteka že obstaja v mapi playing
+    if (fs.existsSync(destinationFilePath)) {
+        return res.status(400).json({ error: 'Datoteka že obstaja v predvajalniku.' });
+    }
+
+    // Kopiraj datoteko v mapo playing
+    fs.copyFileSync(sourceFilePath, destinationFilePath);
+
+    res.json({ message: 'Datoteka je bila uspešno dodana v predvajalnik.' });
+});
+
+
 const radio = new WebRadio({
     audioDirectory: "./uploads", // Set the directory where audio files are stored
     loop: true, // Loop the audio files
     shuffle: true, // Shuffle the play order of the audio files
-    logFn: (msg) => console.log(`[Radio]: ${msg}`), // Log radio messages to the console
+    logFn: (msg) => {
+        // Log the message to the console
+        console.log(`[Radio]: ${msg}`);
+
+        // Extract the current song information from the log message
+        const match = msg.match(/Now Playing: (.+) \| Bitrate: (\d+)kbps/);
+        if (match && match.length === 3) {
+            const songDetails = parseSongDetails(match[1]);
+            radio.currentSong = {
+                artist: songDetails.artist,
+                song: songDetails.song,
+                bitrate: parseInt(match[2]),
+            };
+        }
+    },
 });
-  
+
+
+// Function to parse song details from the file name
+function parseSongDetails(fileName) {
+    // Assuming the file name format is "SongName - Composer.mp3"
+    const [artist, composerWithExtension] = fileName.split(" - ");
+    const song = composerWithExtension.replace(".mp3", "");
+    return { artist, song };
+}
+
 radio.start(); // Start the radio stream
 app.get("/stream", radio.connect()); // Allow clients to connect to the radio stream
 app.get('/radio', (req, res) => {
     res.render('radio');
 });
+
+// Dodaj novo pot za pridobivanje trenutne pesmi
+app.get('/current-song', (req, res) => {
+    const { artist, song } = radio.currentSong || {};
+    if (artist !== undefined && song !== undefined) {
+        res.json({ artist, song });
+    } else {
+        res.status(404).json({ error: "No song currently playing." });
+    }
+});
+  
 
 app.get('/data', (req, res) => {
     if(req.user){
