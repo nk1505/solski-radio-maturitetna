@@ -97,9 +97,6 @@
     <div class="search-container ui input">
       <input type="text" id="searchInput" placeholder="Išči...">
     </div>
-    
-
-      
 
     <% songs.forEach(song => { %>
       <div class="ui segment">
@@ -108,7 +105,13 @@
           <source src="/music/<%= encodeURIComponent(song.name) %>" type="audio/mp3">
           Your browser does not support the audio element.
         </audio>
-        <button class="ui blue button" onclick="addToPlaylist('<%= encodeURIComponent(song.name) %>')">Dodaj na playlisto</button>
+
+        <% if (song.isInPlaying) { %>
+          <button class="ui red button" onclick="removeFromPlaylist('<%= encodeURIComponent(song.name) %>')">Odstrani iz playliste</button>
+        <% } else { %>
+          <button class="ui blue button" onclick="addToPlaylist('<%= encodeURIComponent(song.name) %>')">Dodaj na playlisto</button>
+        <% } %>
+
         <button class="ui red button" onclick="deleteSong('<%= encodeURIComponent(song.name) %>')">Izbriši</button>
       </div>
     <% }); %>
@@ -145,7 +148,7 @@
         success: function (data) {
           console.log(data.message);
           // Ponovno naloži stran ali izvedi dodatne korake po potrebi
-          location.reload();
+          refreshPage();
         },
         error: function (error) {
           console.error('Napaka pri izbrisu pesmi:', error.responseJSON.error);
@@ -159,11 +162,29 @@
       $.post(`/add-to-playlist/${encodeURIComponent(songName)}`, function (data) {
         console.log(data.message);
         // Dodaj dodatne korake po potrebi
+        refreshPage();
       })
         .fail(function (error) {
           console.error('Napaka pri dodajanju pesmi na seznam predvajanja:', error.responseJSON.error);
           // Obvesti uporabnika o napaki po potrebi
         });
+    }
+
+    function removeFromPlaylist(songName) {
+      // Izvedi API klic za odstranjevanje pesmi s seznama predvajanja
+      $.post(`/remove-from-playlist/${encodeURIComponent(songName)}`, function (data) {
+        console.log(data.message);
+        // Dodaj dodatne korake po potrebi
+        refreshPage();
+      })
+        .fail(function (error) {
+          console.error('Napaka pri odstranjevanju pesmi s seznama predvajanja:', error.responseJSON.error);
+          // Obvesti uporabnika o napaki po potrebi
+        });
+    }
+
+    function refreshPage() {
+      location.reload(); // Ponovno naloži stran ali izvedi dodatne korake po potrebi
     }
   </script>
 </body>

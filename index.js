@@ -63,7 +63,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-const db = mysql.createConnection({
+/*const db = mysql.createConnection({
     host: process.env.db_host,
     user: process.env.db_user,
     password: process.env.db_password,
@@ -76,7 +76,7 @@ db.connect((err) => {
         return;
     }
     console.log('Povezan na MySQL');
-});
+});*/
 
 const keycloakIssuer = await Issuer.discover(process.env.keycloakIssuer)
 // don't think I should be console.logging this but its only a demo app
@@ -172,15 +172,19 @@ app.post('/upload', checkAuthenticated, upload.single('musicFile'), (req, res) =
     res.json({ message: 'Datoteka je bila uspešno naložena.', file });
 });
 
-app.get('/library', checkAuthenticated,async (req, res) => {
+app.get('/library', checkAuthenticated, async (req, res) => {
     try {
-        const files = await readdir(uploadDir);
-        console.log(files);
-        const songs = files
-            .filter(file => file.endsWith('.mp3'))
-            .map(file => ({ name: file }));
+        const libraryFiles = await readdir(uploadDir);
+        const playingFiles = await readdir(playingDir);
 
-        res.render('library', { songs, user: req.user });
+        const librarySongs = libraryFiles
+            .filter(file => file.endsWith('.mp3'))
+            .map(file => ({
+                name: file,
+                isInPlaying: playingFiles.includes(file),
+            }));
+
+        res.render('library', { songs: librarySongs, user: req.user });
     } catch (err) {
         console.error(err);
         res.status(500).send('Internal Server Error');
@@ -257,11 +261,49 @@ app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
     fs.copyFileSync(sourceFilePath, destinationFilePath);
 
     res.json({ message: 'Datoteka je bila uspešno dodana v predvajalnik.' });
+    const files = fs.readdirSync(playingDir);
+    const mp3Files = files.filter(file => file.endsWith('.mp3'));
+
+    if (mp3Files.length > 1) {
+        radio.start(); 
+    }
+});
+
+// API za odstranjevanje pesmi iz mape `/playing`
+app.post('/remove-from-playlist/:songName', checkAuthenticated, async (req, res) => {
+    const files = fs.readdirSync(playingDir);
+    const mp3Files = files.filter(file => file.endsWith('.mp3'));
+
+    if (mp3Files.length > 1) {
+        radio.stop(); 
+    }
+    try {
+        const songName = decodeURIComponent(req.params.songName);
+        console.log(songName);
+
+        const filePath = path.join(playingDir, songName);
+
+        // Preveri, ali datoteka obstaja
+        await fs.promises.access(filePath);
+
+        // Izbriši datoteko
+        await fs.promises.unlink(filePath);
+
+        res.json({ message: 'Pesem uspešno izbrisana.' });
+    } catch (err) {
+        radio.start();
+        console.error(err);
+        if (err.code === 'ENOENT') {
+            res.status(404).json({ error: 'Datoteka ne obstaja.' });
+        } else {
+            res.status(500).json({ error: 'Napaka pri brisanju pesmi.' });
+        }
+    }
 });
 
 
 const radio = new WebRadio({
-    audioDirectory: "./uploads", // Set the directory where audio files are stored
+    audioDirectory: "./playing", // Set the directory where audio files are stored
     loop: true, // Loop the audio files
     shuffle: true, // Shuffle the play order of the audio files
     logFn: (msg) => {
@@ -290,11 +332,17 @@ function parseSongDetails(fileName) {
     return { artist, song };
 }
 
-radio.start(); // Start the radio stream
+const files = fs.readdirSync(playingDir);
+const mp3Files = files.filter(file => file.endsWith('.mp3'));
+
+if (mp3Files.length > 1) {
+    radio.play(); 
+}
 app.get("/stream", radio.connect()); // Allow clients to connect to the radio stream
 app.get('/radio', (req, res) => {
     res.render('radio');
 });
+
 
 // Dodaj novo pot za pridobivanje trenutne pesmi
 app.get('/current-song', (req, res) => {
