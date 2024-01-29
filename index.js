@@ -274,33 +274,45 @@ app.post('/remove-from-playlist/:songName', checkAuthenticated, async (req, res)
     const files = fs.readdirSync(playingDir);
     const mp3Files = files.filter(file => file.endsWith('.mp3'));
 
-    if (mp3Files.length > 1) {
-        radio.stop(); 
+    if (mp3Files.length < 2) {
+        try {
+            const songName = decodeURIComponent(req.params.songName);
+            console.log(songName);
+    
+            const filePath = path.join(playingDir, songName);
+    
+            // Preveri, ali datoteka obstaja
+            await fs.promises.access(filePath);
+    
+            // Izbriši datoteko
+            await fs.promises.unlink(filePath);
+    
+            res.json({ message: 'Pesem uspešno izbrisana.' });
+        } catch (err) {
+            console.error(err);
+            if (err.code === 'ENOENT') {
+                res.status(404).json({ error: 'Datoteka ne obstaja.' });
+            } else {
+                res.status(500).json({ error: 'Napaka pri brisanju pesmi.' });
+            }
+        }  
+    }else{
+        res.status(500).json({ error: 'Poizkušaš izbrisati pesem, ki se trenutno predvaja.' });
     }
-    try {
-        const songName = decodeURIComponent(req.params.songName);
-        console.log(songName);
-
-        const filePath = path.join(playingDir, songName);
-
-        // Preveri, ali datoteka obstaja
-        await fs.promises.access(filePath);
-
-        // Izbriši datoteko
-        await fs.promises.unlink(filePath);
-
-        res.json({ message: 'Pesem uspešno izbrisana.' });
-    } catch (err) {
-        radio.start();
-        console.error(err);
-        if (err.code === 'ENOENT') {
-            res.status(404).json({ error: 'Datoteka ne obstaja.' });
-        } else {
-            res.status(500).json({ error: 'Napaka pri brisanju pesmi.' });
-        }
-    }
+    
 });
 
+
+// Function to parse song details from the file name
+function parseSongDetails(fileName) {
+    // Assuming the file name format is "SongName - Composer.mp3"
+    const [artist, composerWithExtension] = fileName.split(" - ");
+    const song = composerWithExtension.replace(".mp3", "");
+    return { artist, song };
+}
+
+const files = fs.readdirSync(playingDir);
+const mp3Files = files.filter(file => file.endsWith('.mp3'));
 
 const radio = new WebRadio({
     audioDirectory: "./playing", // Set the directory where audio files are stored
@@ -323,21 +335,7 @@ const radio = new WebRadio({
     },
 });
 
-
-// Function to parse song details from the file name
-function parseSongDetails(fileName) {
-    // Assuming the file name format is "SongName - Composer.mp3"
-    const [artist, composerWithExtension] = fileName.split(" - ");
-    const song = composerWithExtension.replace(".mp3", "");
-    return { artist, song };
-}
-
-const files = fs.readdirSync(playingDir);
-const mp3Files = files.filter(file => file.endsWith('.mp3'));
-
-if (mp3Files.length > 1) {
-    radio.play(); 
-}
+radio.start();
 app.get("/stream", radio.connect()); // Allow clients to connect to the radio stream
 app.get('/radio', (req, res) => {
     res.render('radio');
@@ -383,6 +381,10 @@ app.get('/logout/callback', (req, res) => {
         // redirects the user to a public route
         res.redirect('/');
     });
+});
+
+app.get('/settings', (req,res) => {
+    res.redirect('https://auth.nejckrasevec.si/realms/master/account/');
 });
 
 app.get('*', (req, res) => {
