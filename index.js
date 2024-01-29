@@ -15,6 +15,7 @@ import fs from 'fs';
 import { readdir } from 'fs/promises';
 import mysql from 'mysql2';
 import WebRadio from 'express-web-radio';
+import axios from 'axios';
 const app = express();
 
 //? Nastavimo EJS za naš view engine
@@ -274,33 +275,39 @@ app.post('/remove-from-playlist/:songName', checkAuthenticated, async (req, res)
     const files = fs.readdirSync(playingDir);
     const mp3Files = files.filter(file => file.endsWith('.mp3'));
 
-    if (mp3Files.length < 2) {
-        try {
-            const songName = decodeURIComponent(req.params.songName);
-            console.log(songName);
-    
-            const filePath = path.join(playingDir, songName);
-    
-            // Preveri, ali datoteka obstaja
-            await fs.promises.access(filePath);
-    
-            // Izbriši datoteko
-            await fs.promises.unlink(filePath);
-    
-            res.json({ message: 'Pesem uspešno izbrisana.' });
-        } catch (err) {
-            console.error(err);
-            if (err.code === 'ENOENT') {
-                res.status(404).json({ error: 'Datoteka ne obstaja.' });
-            } else {
-                res.status(500).json({ error: 'Napaka pri brisanju pesmi.' });
-            }
-        }  
-    }else{
-        res.status(500).json({ error: 'Poizkušaš izbrisati pesem, ki se trenutno predvaja.' });
-    }
-    
+    try {
+        const songName = decodeURIComponent(req.params.songName);
+        console.log(songName);
+
+        const filePath = path.join(playingDir, songName);
+
+        // Preveri, ali datoteka obstaja
+        await fs.promises.access(filePath);
+
+        // Pridobi ime trenutne pesmi
+        const currentSongResponse = await axios.get('http://localhost:3000/current-song'); // prilagodi port in naslov glede na tvoje okoliščine
+        const { artist: currentArtist, song: currentSong } = currentSongResponse.data;
+
+        // Preveri, ali se trenutno predvaja ta pesem
+        if (currentSong === parseSongDetails(songName).song) {
+            res.status(500).json({ error: 'Ne moreš izbrisati pesmi, ki se trenutno predvaja.' });
+            return;
+        }
+
+        // Izbriši datoteko
+        await fs.promises.unlink(filePath);
+
+        res.json({ message: 'Pesem uspešno izbrisana.' });
+    } catch (err) {
+        console.error(err);
+        if (err.code === 'ENOENT') {
+            res.status(404).json({ error: 'Datoteka ne obstaja.' });
+        } else {
+            res.status(500).json({ error: 'Napaka pri brisanju pesmi.' });
+        }
+    }  
 });
+
 
 
 // Function to parse song details from the file name
@@ -348,7 +355,7 @@ app.get('/current-song', (req, res) => {
     if (artist !== undefined && song !== undefined) {
         res.json({ artist, song });
     } else {
-        res.status(404).json({ error: "No song currently playing." });
+        res.status(404).json({ error: "Nobena pesem se ne predvaja trenutno." });
     }
 });
   
