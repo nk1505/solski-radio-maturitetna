@@ -203,6 +203,16 @@ app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
         // Preveri, ali datoteka obstaja
         await fs.promises.access(filePath);
 
+        // Pridobi ime trenutne pesmi
+        const currentSongResponse = await axios.get('http://localhost:3000/current-song');
+        const { song: currentSong } = currentSongResponse.data;
+
+        // Preveri, ali se trenutno predvaja ta pesem
+        if (currentSong === parseSongDetails(songName).song) {
+            res.status(500).json({ error: 'Ne moreš izbrisati pesmi, ki se trenutno predvaja.' });
+            return;
+        }
+
         // Izbriši datoteko
         await fs.promises.unlink(filePath);
 
@@ -216,6 +226,7 @@ app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
         }
     }
 });
+
 
 /* app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
     const songName = decodeURIComponent(req.params.songName);
