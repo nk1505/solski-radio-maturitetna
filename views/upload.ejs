@@ -75,11 +75,11 @@
     <form class="ui form" action="/upload" method="post" enctype="multipart/form-data">
       <div class="field">
         <label>Ime pesmi</label>
-        <input type="text" name="songName" placeholder="Ime pesmi" required>
+        <input type="text" name="songName" id="songName" placeholder="Ime pesmi" required>
       </div>
       <div class="field">
         <label>Izvajalec</label>
-        <input type="text" name="artist" placeholder="Izvajalec" required>
+        <input type="text" name="artist" id="artist" placeholder="Izvajalec" required>
       </div>
       <!-- "Drag & drop" območje -->
       <div id="dropArea" onclick="handleClick()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
@@ -96,7 +96,13 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.0/jsmediatags.min.js"></script>
   <script>
+    // Definicija funkcije handleClick pred uporabo
+    function handleClick() {
+      fileInput.click();
+    }
+
     $(document).ready(function () {
       $('.ui.dropdown').dropdown({ on: 'hover' });
 
@@ -106,8 +112,6 @@
       dropArea.addEventListener('dragover', handleDragOver);
       dropArea.addEventListener('dragleave', handleDragLeave);
       dropArea.addEventListener('drop', handleDrop);
-      dropArea.addEventListener('click', handleClick);
-      fileInput.addEventListener('change', handleFileChange);
 
       function handleDragOver(event) {
         event.preventDefault();
@@ -130,17 +134,53 @@
         fileInput.files = files;
         if (files.length > 0) {
           dropArea.innerHTML = `Izbrana datoteka: ${files[0].name}`;
+          // Ponastavi sporočilo ob izbrani datoteki
+          document.getElementById('fileSelectedText').innerHTML = "";
+
+          // Preberi metapodatke ob izbiri datoteke
+          readID3(files[0]);
         } else {
           dropArea.innerHTML = 'Povlecite sem datoteke ali kliknite za nalaganje.';
         }
       }
 
-      function handleClick() {
-        fileInput.click();
+      function readID3(file) {
+        // Uporaba knjižnice jsmediatags za branje metapodatkov
+        jsmediatags.read(file, {
+          onSuccess: function(tag) {
+            const artist = tag.tags.artist || "";
+            const title = tag.tags.title || "";
+            document.getElementById('artist').value = artist.trim();
+            document.getElementById('songName').value = title.trim();
+          },
+          onError: function(error) {
+            console.log(error);
+            document.getElementById('fileSelectedText').innerHTML = "Napaka pri branju metapodatkov.";
+          }
+        });
       }
 
-      function handleFileChange() {
-        handleFiles(fileInput.files);
+      // Dodaj poslušalca dogodka za spremembo vrednosti polja za izbiro datoteke
+      fileInput.addEventListener('change', function(event) {
+        handleFiles(event.target.files);
+      });
+
+      // Dodaj poslušalca dogodka za spremembo vrednosti polja za ime pesmi
+      document.getElementById('songName').addEventListener('input', function(event) {
+        handleInputChange();
+      });
+
+      // Dodaj poslušalca dogodka za spremembo vrednosti polja za izvajalca
+      document.getElementById('artist').addEventListener('input', function(event) {
+        handleInputChange();
+      });
+
+      // Funkcija za posodabljanje polj za ime pesmi in izvajalca ob spremembi vrednosti
+      function handleInputChange() {
+        const songNameInput = document.getElementById('songName');
+        const artistInput = document.getElementById('artist');
+        songNameInput.value = songNameInput.value.trim();
+        artistInput.value = artistInput.value.trim();
       }
     });
   </script>

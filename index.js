@@ -185,13 +185,16 @@ app.get('/library', checkAuthenticated, async (req, res) => {
                 isInPlaying: playingFiles.includes(file),
             }));
 
-        res.render('library', { songs: librarySongs, user: req.user });
+        // Vedno definirajte spremenljivke za sporočila
+        res.render('library', { songs: librarySongs, user: req.user, errorMessage: null, successMessage: null });
     } catch (err) {
         console.error(err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).render('library', { user: req.user, errorMessage: 'Napaka! Prišlo je do napake na strežniški strani!.' });
     }
 });
 
+
+// Dodajmo končno točko za izbris pesmi
 // Dodajmo končno točko za izbris pesmi
 app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
     try {
@@ -209,23 +212,25 @@ app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
 
         // Preveri, ali se trenutno predvaja ta pesem
         if (currentSong === parseSongDetails(songName).song) {
-            res.status(500).json({ error: 'Ne moreš izbrisati pesmi, ki se trenutno predvaja.' });
+            res.status(500).render('library', { user: req.user, errorMessage: 'Ne moreš izbrisati pesmi, ki se trenutno predvaja.' });
             return;
         }
 
         // Izbriši datoteko
         await fs.promises.unlink(filePath);
 
-        res.json({ message: 'Pesem uspešno izbrisana.' });
+        // Posreduj sporočilo o uspehu in renderaj stran
+        res.status(200).render('library', { user: req.user, successMessage: 'Pesem uspešno izbrisana.' });
     } catch (err) {
         console.error(err);
         if (err.code === 'ENOENT') {
-            res.status(404).json({ error: 'Datoteka ne obstaja.' });
+            res.status(404).render('library', { user: req.user, errorMessage: 'Datoteka ne obstaja.' });
         } else {
-            res.status(500).json({ error: 'Napaka pri brisanju pesmi.' });
+            res.status(500).render('library', { user: req.user, errorMessage: 'Napaka pri brisanju pesmi.' });
         }
     }
 });
+
 
 
 /* app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {

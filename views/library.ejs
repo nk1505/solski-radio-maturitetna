@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Šolski radio</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
   <link rel="shortcut icon" type="image/png" href="images/kujira.jpg">
   <style>
     body {
@@ -91,10 +93,12 @@
         <a class="item" href="/login"> Login</a>
       <% } %>
     </div>
-  </nav>
+  </nav> 
   <section class="ui container">
     <h1 class="ui dividing header">Naložene pesmi</h1>
-
+    <div class="alert alert-danger" role="alert" style="display: none;"></div>
+    <div class="alert alert-success" role="alert" style="display: none;"></div>
+    
     <div class="search-container ui input">
       <input type="text" id="searchInput" placeholder="Išči...">
     </div>
@@ -148,12 +152,17 @@
         type: 'DELETE',
         success: function (data) {
           console.log(data.message);
+          // Prikaži uspešno obvestilo
+          showSuccessMessage(data.message);
           // Ponovno naloži stran ali izvedi dodatne korake po potrebi
           refreshPage();
         },
         error: function (error) {
           console.error('Napaka pri izbrisu pesmi:', error.responseJSON.error);
-          // Obvesti uporabnika o napaki po potrebi
+          // Prikaži obvestilo o napaki
+          console.log("Napaka");
+          showErrorMessage(error.responseJSON.error);
+          console.log("Napaka");
         }
       });
     }
@@ -186,6 +195,22 @@
 
     function refreshPage() {
       location.reload(); // Ponovno naloži stran ali izvedi dodatne korake po potrebi
+    }
+
+    // Funkcija za prikazovanje uspešnega obvestila
+    function showSuccessMessage(message) {
+      $('.alert-success').text(message);
+      $('.alert-success').show();
+      setTimeout(function () {
+        $('.alert-success').fadeOut();
+      }, 3000);
+    }
+
+    // Funkcija za prikazovanje obvestila o napaki
+    function showErrorMessage(message) {
+      $('.alert-danger').text(message);
+      $('.alert-danger').show();
+      console.log("Se izvede napaka");
     }
   </script>
 </body>
