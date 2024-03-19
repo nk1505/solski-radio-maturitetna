@@ -1,0 +1,108 @@
+/* Splošni stil strani */
+body {
+background-color: #f4f4f4;
+}
+
+/* Velikost glavnega naslova */
+.ui.menu .header.item {
+    font-size: 1.5em;
+}
+
+/* Izgled glavnega območja */
+section.container {
+    margin-top: 20px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Izgled segmenta */
+.ui.segment {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Izgled predvajalnika */
+audio {
+    width: 100%;
+    margin-top: 10px;
+    background-color: #282c34;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Izgled kontrolnika predvajalnika */
+audio::-webkit-media-controls {
+    background-color: #282c34;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Barva gumba za predvajanje */
+audio::-webkit-media-controls-play-button {
+    color: #ff6363;
+    font-size: 20px;
+}
+
+/* Izgled iskalnega polja */
+.search-container.ui.input {
+    margin-bottom: 10px;
+}
+
+
+#dropArea {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+}
+
+#dropArea.dragover {
+    background-color: #f0f0f0;
+}
+
+#fileInput {
+    display: none;
+}
+
+#fileSelectedText {
+    margin-top: 10px;
+    display: none;
+}
+
+/* Dodatki za sodobnejši izgled predvajalnika */
+.feature-box {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.feature-icon {
+    font-size: 2em;
+    margin-right: 15px;
+}
+
+audio::-webkit-media-controls-volume-slider {
+    background-color: transparent;
+}
+
+button.ui.red.button {
+    margin-top: 10px;
+    background-color: #ff6363;
+    color: white;
+}
+
+audio::-webkit-media-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}

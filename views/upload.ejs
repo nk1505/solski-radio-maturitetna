@@ -4,69 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Šolski radio</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.css">
-  <link rel="shortcut icon" type="image/png" href="images/kujira.jpg">
-  <style>
-    body {
-      background-color: #f0f0f0;
-    }
-    .ui.menu .header.item {
-      font-size: 1.5em;
-    }
-    section.container {
-      margin-top: 20px;
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .ui.segment {
-      margin-top: 20px;
-      padding: 20px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    audio {
-      width: 100%;
-    }
-    button.ui.red.button {
-      margin-top: 10px;
-    }
-    /* Dodano za "drag & drop" območje */
-    #dropArea {
-      border: 2px dashed #ccc;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-    }
-
-    #dropArea.dragover {
-      background-color: #f0f0f0;
-    }
-
-    #fileInput {
-      display: none;
-    }
-
-    #fileSelectedText {
-      margin-top: 10px;
-      display: none;
-    }
-  </style>
+  <link rel="shortcut icon" type="image/svg+xml" href="ikona.svg">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
 <body>
   <nav class="ui inverted black menu">
     <header class="header item"> <a href="/"> Šolski radio </a> </header>
     <div class="right menu">
-      <a class="item" href="/data"> Data</a>
+      <a class="item" href="/data"> Podatki</a>
       <a class="item" href="/radio"> Radio</a>
       <% if (user) { %>
         <a class="item" href="/upload"> Nalaganje</a>
         <a class="item" href="/library"> Knjižnica</a>
         <a class="item" href="/settings"> <%= user.name %></a>
-        <a class="item" href="/logout"> Logout</a>
+        <a class="item" href="/logout"> Odjava</a>
       <% } else { %>
-        <a class="item" href="/login"> Login</a>
+        <a class="item" href="/login"> Prijava</a>
       <% } %>
     </div>
   </nav>
@@ -75,22 +30,23 @@
     <form class="ui form" action="/upload" method="post" enctype="multipart/form-data">
       <div class="field">
         <label>Ime pesmi</label>
-        <input type="text" name="songName" id="songName" placeholder="Ime pesmi" required>
+        <input type="text" name="songName" id="songName" placeholder="Ime pesmi" required pattern="^[^\-]*$">
       </div>
       <div class="field">
         <label>Izvajalec</label>
-        <input type="text" name="artist" id="artist" placeholder="Izvajalec" required>
+        <input type="text" name="artist" id="artist" placeholder="Izvajalec" required pattern="^[^\-]*$">
       </div>
       <!-- "Drag & drop" območje -->
-      <div id="dropArea" onclick="handleClick()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
-        Povlecite sem datoteke ali kliknite za nalaganje.
+      <div id="dropArea" onclick="handleClick()">
+        Kliknite za nalaganje datoteke.
       </div>
       <!-- Polje za nalaganje, skrito, da ne prikazuje privzete oblike -->
-      <input type="file" name="musicFile" accept=".mp3" required id="fileInput">
+      <input type="file" name="musicFile" accept=".mp3" required id="fileInput" style="display: none;">
       <!-- Odzivno besedilo ob izbrani datoteki -->
       <div id="fileSelectedText"></div>
       <br>
-      <button class="ui button" type="submit">Naloži</button>
+      <button class="ui blue button" type="submit">Naloži</button>
+      <button class="ui red button" type="reset">Ponastavi</button>
     </form>
   </section>
 
@@ -98,54 +54,18 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.0/jsmediatags.min.js"></script>
   <script>
-    // Definicija funkcije handleClick pred uporabo
+    // Define handleClick function before usage
     function handleClick() {
       fileInput.click();
+      updateDropAreaText(); // Dodajamo klic funkcije za posodobitev besedila
     }
-
+  
     $(document).ready(function () {
       $('.ui.dropdown').dropdown({ on: 'hover' });
-
-      const dropArea = document.getElementById('dropArea');
-      const fileInput = document.getElementById('fileInput');
-
-      dropArea.addEventListener('dragover', handleDragOver);
-      dropArea.addEventListener('dragleave', handleDragLeave);
-      dropArea.addEventListener('drop', handleDrop);
-
-      function handleDragOver(event) {
-        event.preventDefault();
-        dropArea.classList.add('dragover');
-      }
-
-      function handleDragLeave(event) {
-        event.preventDefault();
-        dropArea.classList.remove('dragover');
-      }
-
-      function handleDrop(event) {
-        event.preventDefault();
-        dropArea.classList.remove('dragover');
-        const files = event.dataTransfer.files;
-        handleFiles(files);
-      }
-
-      function handleFiles(files) {
-        fileInput.files = files;
-        if (files.length > 0) {
-          dropArea.innerHTML = `Izbrana datoteka: ${files[0].name}`;
-          // Ponastavi sporočilo ob izbrani datoteki
-          document.getElementById('fileSelectedText').innerHTML = "";
-
-          // Preberi metapodatke ob izbiri datoteke
-          readID3(files[0]);
-        } else {
-          dropArea.innerHTML = 'Povlecite sem datoteke ali kliknite za nalaganje.';
-        }
-      }
-
+  
+      // Define readID3 function to read metadata
       function readID3(file) {
-        // Uporaba knjižnice jsmediatags za branje metapodatkov
+        // Use the jsmediatags library to read metadata
         jsmediatags.read(file, {
           onSuccess: function(tag) {
             const artist = tag.tags.artist || "";
@@ -155,34 +75,55 @@
           },
           onError: function(error) {
             console.log(error);
-            document.getElementById('fileSelectedText').innerHTML = "Napaka pri branju metapodatkov.";
           }
         });
       }
-
-      // Dodaj poslušalca dogodka za spremembo vrednosti polja za izbiro datoteke
+  
+      // Add event listener for file input change
+      const fileInput = document.getElementById('fileInput');
       fileInput.addEventListener('change', function(event) {
-        handleFiles(event.target.files);
+        const files = event.target.files;
+        if (files.length > 0) {
+          const artistInput = document.getElementById('artist');
+          const songNameInput = document.getElementById('songName');
+          artistInput.value = "";
+          songNameInput.value = "";
+          // Read metadata upon file selection
+          readID3(files[0]);
+          updateDropAreaText(); // Dodajamo klic funkcije za posodobitev besedila
+        }
       });
-
-      // Dodaj poslušalca dogodka za spremembo vrednosti polja za ime pesmi
-      document.getElementById('songName').addEventListener('input', function(event) {
-        handleInputChange();
+  
+      // Prevent default drag and drop behavior
+      const dropArea = document.getElementById('dropArea');
+      dropArea.addEventListener('dragover', function(event) {
+        event.preventDefault();
       });
-
-      // Dodaj poslušalca dogodka za spremembo vrednosti polja za izvajalca
-      document.getElementById('artist').addEventListener('input', function(event) {
-        handleInputChange();
+  
+      dropArea.addEventListener('drop', function(event) {
+        event.preventDefault();
       });
-
-      // Funkcija za posodabljanje polj za ime pesmi in izvajalca ob spremembi vrednosti
-      function handleInputChange() {
-        const songNameInput = document.getElementById('songName');
-        const artistInput = document.getElementById('artist');
-        songNameInput.value = songNameInput.value.trim();
-        artistInput.value = artistInput.value.trim();
+  
+      // Funkcija za posodabljanje besedila v padajočem meniju
+      function updateDropAreaText() {
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length > 0) {
+          dropArea.innerHTML = `Izbrana datoteka: ${fileInput.files[0].name}`;
+        } else {
+          dropArea.innerHTML = 'Klikni za nalaganje datoteke.';
+        }
       }
+  
+      // Dodajamo funkcionalnost gumba "Ponastavi"
+      const resetButton = document.querySelector('button[type="reset"]');
+      resetButton.addEventListener('click', function() {
+        const dropArea = document.getElementById('dropArea');
+        dropArea.innerHTML = 'Klikni za nalaganje datoteke.';
+        fileInput.value = ''; // Počistimo izbrano datoteko
+        updateDropAreaText(); // Posodobimo besedilo v padajočem meniju
+      });
     });
-  </script>
+  </script>   
 </body>
 </html>

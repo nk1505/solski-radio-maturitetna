@@ -3,80 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Radio</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #282c34;
-      color: #fff;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-
-    h1 {
-      font-size: 2em;
-      margin-bottom: 20px;
-    }
-
-    audio {
-      width: 100%;
-      background-color: #282c34;
-      border: none;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    audio::-webkit-media-controls-timeline {
-      display: none;
-    }
-
-    audio::-webkit-media-controls-current-time-display,
-    audio::-webkit-media-controls-time-remaining-display {
-      font-size: 0; /* Hide the time display */
-    }
-
-    #current-song {
-      margin-top: 20px;
-      font-size: 1.2em;
-    }
-  </style>
+  <title>Šolski radio</title>
+  <link rel="shortcut icon" type="image/svg+xml" href="ikona.svg">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="radio.css">
 </head>
 <body>
-  <h1>Web Radio</h1>
+  <h1>Šolski radio</h1>
   <span id="current-song">
     <!-- Tukaj se bo prikazovalo ime trenutno predvajane pesmi -->
   </span>
   <br>
-  <audio controls>
+  <audio controls class="w-100">
     <source src="/stream" type="audio/mpeg">
-    Your browser does not support the audio element.
+    <p class="unsupported-message">Vaš brskalnik ne podpira predvajanja avdia.</p>
   </audio>
-
-  <script>
-    const currentSongElement = document.getElementById('current-song');
-  
-    function getCurrentSong() {
-      fetch('/current-song')
-        .then(response => response.json())
-        .then(data => {
-          if (data.artist !== undefined && data.song !== undefined) {
-            currentSongElement.innerText = `Trenutno predvajano: ${data.artist} - ${data.song}`;
-          } else {
-            currentSongElement.innerText = 'Trenutno predvajano: undefined';
-          }
-        })
-        .catch(error => console.error('Napaka pri pridobivanju trenutne pesmi:', error));
-    }
-  
-    getCurrentSong();
-  
-    setInterval(getCurrentSong, 5000); // Na vsakih 5 sekund, na primer
-  </script>
-  
 </body>
+  <!-- JS kodo povežemo z druge datoteke-->
+  <script src="radio.js"></script>
 </html>

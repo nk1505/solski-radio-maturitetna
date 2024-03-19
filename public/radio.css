@@ -1,0 +1,50 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #14213d;
+    color: #ffffff;
+}
+h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+    color: #fca311;
+}
+#current-song {
+    margin-top: 20px;
+    font-size: 1.2em;
+    color: #e5e5e5;
+}
+audio {
+    width: 80%;
+    max-width: 600px;
+    margin-top: 20px;
+    background-color: #e5e5e5;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+.unsupported-message {
+    font-size: 1.2em;
+    margin-top: 10px;
+    color: #ffffff;
+}
+.section {
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+.section-title {
+    font-size: 2em;
+    color: #fca311;
+}
+/* Skrij kontrolnik časa */
+audio::-webkit-media-controls-timeline,
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display {
+    display: none;
+}

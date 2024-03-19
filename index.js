@@ -13,7 +13,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { readdir } from 'fs/promises';
-import mysql from 'mysql2';
+// import mysql from 'mysql2';
 import WebRadio from 'express-web-radio';
 import axios from 'axios';
 const app = express();
@@ -42,7 +42,7 @@ const storage = multer.diskStorage({
         const fileExtension = path.extname(file.originalname).toLowerCase();
 
         if (fileExtension !== '.mp3') {
-            return cb(new Error('Samo .mp3 datoteke so dovoljene!'), null);
+            return cb(('Samo .mp3 datoteke so dovoljene!'), null);
         }
 
         const artist = req.body.artist || 'UnknownArtist';
@@ -53,7 +53,7 @@ const storage = multer.diskStorage({
         try {
             await fs.promises.access(path.join(uploadDir, fileName));
             // Datoteka že obstaja
-            return cb(new Error('Datoteka s tem imenom že obstaja! Izberite drugo ime.'), null);
+            return cb(('Datoteka s tem imenom že obstaja! Izberite drugo ime.'), null);
         } catch (err) {
             // Datoteka ne obstaja, nadaljuj s trenutnim imenom
             cb(null, fileName);
@@ -61,29 +61,20 @@ const storage = multer.diskStorage({
     }
 });
 
-
-const upload = multer({ storage: storage });
-
-/*const db = mysql.createConnection({
-    host: process.env.db_host,
-    user: process.env.db_user,
-    password: process.env.db_password,
-    database: process.env.db_database,
+// Dodamo še dodatno preverjanje imena datoteke z regexom
+const upload = multer({
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        const validFileName = /^[^\-]*$/; // Regex za preverjanje, da v imenu datoteke ni znaka "-"
+        if (!validFileName.test(file.originalname)) {
+            return cb(('Ime datoteke ne sme vsebovati znaka "-". Prosimo, izberite drugo ime.'), false);
+        }
+        cb(null, true);
+    }
 });
 
-db.connect((err) => {
-    if (err) {
-        console.error('Napaka pri povezovanju na MySQL:', err);
-        return;
-    }
-    console.log('Povezan na MySQL');
-});*/
 
 const keycloakIssuer = await Issuer.discover(process.env.keycloakIssuer)
-// don't think I should be console.logging this but its only a demo app
-// nothing bad ever happens from following the docs :)
-//console.log('Najdeni keycloak podatki %s %O', keycloakIssuer.issuer, keycloakIssuer.metadata);
-
 const client = new keycloakIssuer.Client({
     client_id: process.env.client_id,
     client_secret: process.env.client_secret,
@@ -109,7 +100,6 @@ passport.use('oidc', new Strategy({client}, (tokenSet, userinfo, done)=>{
         return done(null, tokenSet.claims());
     })
 )
-
 passport.serializeUser(function(user, done) {
     done(null, user);
   });
@@ -140,7 +130,7 @@ var checkAuthenticated = (req, res, next) => {
     }
     res.redirect("/login")
 }
-
+app.use('/',express.static('public'));
 app.use('/music', checkAuthenticated ,express.static('uploads'));
 
 app.get('/upload', checkAuthenticated, (req, res) => {
@@ -159,17 +149,13 @@ app.post('/upload', checkAuthenticated, upload.single('musicFile'), (req, res) =
     if (!artist) {
         return res.status(400).json({ error: 'Vpišite izvajatelja.' });
     }
-
     if (req.fileValidationError) {
         return res.status(400).json({ error: req.fileValidationError });
     }
-
     if (!req.file) {
         return res.status(400).json({ error: 'Datoteka ni bila podana!' });
     }
-
     const file = req.file;
-
     res.json({ message: 'Datoteka je bila uspešno naložena.', file });
 });
 
@@ -193,8 +179,6 @@ app.get('/library', checkAuthenticated, async (req, res) => {
     }
 });
 
-
-// Dodajmo končno točko za izbris pesmi
 // Dodajmo končno točko za izbris pesmi
 app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
     try {
@@ -231,31 +215,6 @@ app.delete('/delete-song/:songName', checkAuthenticated, async (req, res) => {
     }
 });
 
-
-
-/* app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
-    const songName = decodeURIComponent(req.params.songName);
-  
-    // Preveri, ali datoteka obstaja v mapi uploads
-    const filePath = path.join(process.cwd(), 'uploads', songName);
-  
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Datoteka ne obstaja.' });
-    }
-  
-    // Dodaj ime skladbe v tabelo
-    const query = 'INSERT INTO playlist (filename) VALUES (?)';
-    db.query(query, [songName], (error, results) => {
-      if (error) {
-        console.error('Napaka pri dodajanju pesmi v tabelo:', error);
-        res.status(500).json({ error: 'Napaka pri dodajanju pesmi v tabelo' });
-      } else {
-        console.log('Pesem uspešno dodana v tabelo.');
-        res.status(200).json({ message: 'Pesem uspešno dodana v tabelo.' });
-      }
-    });
-}); */
-
 app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
     const songName = decodeURIComponent(req.params.songName);
   
@@ -280,10 +239,6 @@ app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
     res.json({ message: 'Datoteka je bila uspešno dodana v predvajalnik.' });
     const files = fs.readdirSync(playingDir);
     const mp3Files = files.filter(file => file.endsWith('.mp3'));
-
-    if (mp3Files.length > 1) {
-        radio.start(); 
-    }
 });
 
 // API za odstranjevanje pesmi iz mape `/playing`
