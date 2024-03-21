@@ -79,4 +79,5 @@ function showErrorMessage(message) {
 function showErrorMessage(message) {
     $('#errorMessage').text(message); // Izpiši sporočilo napake v element z ID-jem "errorMessage"
     $('#errorAlert').removeClass('d-none'); // Prikazi div z napako
+    document.getElementById("searchInput").scrollIntoView({ behavior: 'smooth', block: 'start' }); // Skrolamo na napako
 }
