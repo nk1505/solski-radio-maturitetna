@@ -16,7 +16,6 @@
   <nav class="ui inverted black menu">
     <header class="header item"> <a href="/"> Šolski radio </a> </header>
     <div class="right menu">
-      <!-- <a class="item" href="/data"> Podatki</a> -->
       <a class="item" href="/radio"> <p class="fa-solid fa-radio"></p>&nbsp;Radio</a>
       <% if (user) { %>
         <a class="item" href="/upload"> <p class="fa-solid fa-upload"></p>&nbsp; Nalaganje</a>
@@ -37,7 +36,7 @@
       <input type="text" id="searchInput" placeholder="Išči...">
     </div>
 
-    <!-- Opozorila o uspešnih in neuspešnih akcijah -->
+    <!-- Opozorila -->
     <div id="errorAlert" class="alert alert-danger d-none" role="alert">
       Napaka: <span id="errorMessage"></span>
     </div>

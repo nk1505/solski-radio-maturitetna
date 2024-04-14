@@ -28,6 +28,20 @@
   </nav>
   <section class="ui container">
     <h1 class="ui dividing header">Nalaganje pesmi</h1>
+    
+    <!-- Obvestilo -->
+    <% if (message) { %>
+    <div id="successAlert" class="alert alert-success" role="alert">
+      <span id="errorMessage"><%= message %> </span>
+    </div>
+    <% } %>
+    <!-- Opozorilo -->
+    <% if (errorMessage) { %>
+    <div id="errorAlert" class="alert alert-danger" role="alert">
+      <span id="errorMessage"><%= errorMessage %> </span>
+    </div>
+    <% } %>
+
     <form class="ui form" action="/upload" method="post" enctype="multipart/form-data">
       <div class="field">
         <label>Ime pesmi</label>
@@ -37,7 +51,7 @@
         <label>Izvajalec</label>
         <input type="text" name="artist" id="artist" placeholder="Izvajalec" required pattern="^[^\-]*$">
       </div>
-      <!-- "Drag & drop" območje -->
+      <!-- Območje za nalaganje glasbe-->
       <div id="dropArea" onclick="handleClick()">
         <p class="fa-solid fa-cloud-arrow-up"></p> Kliknite za nalaganje datoteke.
       </div>
