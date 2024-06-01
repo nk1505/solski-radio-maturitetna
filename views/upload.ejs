@@ -14,7 +14,6 @@
   <nav class="ui inverted black menu">
     <header class="header item"> <a href="/"> Šolski radio </a> </header>
     <div class="right menu">
-      <!-- <a class="item" href="/data"> Podatki</a> -->
       <a class="item" href="/radio"> <p class="fa-solid fa-radio"></p>&nbsp;Radio</a>
       <% if (user) { %>
         <a class="item" href="/upload"> <p class="fa-solid fa-upload"></p>&nbsp; Nalaganje</a>
@@ -45,11 +44,11 @@
     <form class="ui form" action="/upload" method="post" enctype="multipart/form-data">
       <div class="field">
         <label>Ime pesmi</label>
-        <input type="text" name="songName" id="songName" placeholder="Ime pesmi" required pattern="^[^\-]*$">
+        <input type="text" name="songName" id="songName" pattern="[^\-]*" placeholder="Ime pesmi" required>
       </div>
       <div class="field">
         <label>Izvajalec</label>
-        <input type="text" name="artist" id="artist" placeholder="Izvajalec" required pattern="^[^\-]*$">
+        <input type="text" name="artist" id="artist" pattern="[^\-]*" placeholder="Izvajalec" required>
       </div>
       <!-- Območje za nalaganje glasbe-->
       <div id="dropArea" onclick="handleClick()">
@@ -69,7 +68,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.6/semantic.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.0/jsmediatags.min.js"></script>
   <script>
-    // Define handleClick function before usage
+    // Definiraj funkcijo handleClick pred uporabo
     function handleClick() {
       fileInput.click();
       updateDropAreaText(); // Dodajamo klic funkcije za posodobitev besedila
@@ -78,9 +77,9 @@
     $(document).ready(function () {
       $('.ui.dropdown').dropdown({ on: 'hover' });
   
-      // Define readID3 function to read metadata
-      function readID3(file) {
-        // Use the jsmediatags library to read metadata
+      // Definiraj funkcijo pridobi_metapodatke za branje metapodatkov
+      function pridobi_metapodatke(file) {
+        // Uporabi knjižnico jsmediatags za branje metapodatkov
         jsmediatags.read(file, {
           onSuccess: function(tag) {
             const artist = tag.tags.artist || "";
@@ -94,7 +93,7 @@
         });
       }
   
-      // Add event listener for file input change
+      // Dodaj dogodek za spremembo vnosnega polja datoteke
       const fileInput = document.getElementById('fileInput');
       fileInput.addEventListener('change', function(event) {
         const files = event.target.files;
@@ -103,13 +102,13 @@
           const songNameInput = document.getElementById('songName');
           artistInput.value = "";
           songNameInput.value = "";
-          // Read metadata upon file selection
-          readID3(files[0]);
+          // Preberi metapodatke ob izbiri datoteke
+          pridobi_metapodatke(files[0]);
           updateDropAreaText(); // Dodajamo klic funkcije za posodobitev besedila
         }
       });
   
-      // Prevent default drag and drop behavior
+      // Prepreči privzeto obnašanje povleci in spusti
       const dropArea = document.getElementById('dropArea');
       dropArea.addEventListener('dragover', function(event) {
         event.preventDefault();
@@ -130,15 +129,14 @@
         }
       }
   
-      // Dodajamo funkcionalnost gumba "Ponastavi"
+      // Dodaj funkcionalnost gumba "Ponastavi"
       const resetButton = document.querySelector('button[type="reset"]');
       resetButton.addEventListener('click', function() {
         const dropArea = document.getElementById('dropArea');
         dropArea.innerHTML = 'Klikni za nalaganje datoteke.';
-        fileInput.value = ''; // Počistimo izbrano datoteko
-        updateDropAreaText(); // Posodobimo besedilo v padajočem meniju
+        fileInput.value = ''; // Počisti izbrano datoteko
+        updateDropAreaText(); // Posodobi besedilo v padajočem meniju
       });
     });
-  </script>   
-</body>
-</html>
+</script>
+

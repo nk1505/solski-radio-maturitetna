@@ -68,14 +68,14 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
     fileFilter: function (req, file, cb) {
-        const validFileName = /^[^\-]*$/; // Regex za preverjanje, da v imenu ni znaka "-"
+        const validFileName = /^[^\/\'\-]*$/; // Regex za preverjanje, da v imenu ni znaka "-"
 
         // Preverimo, ali ime avtorja in pesmi vsebujeta znak "-"
         if (!validFileName.test(req.body.artist)) {
-            return cb('Ime izvajalca ne sme vsebovati znaka "-". Prosimo, izberite drugo ime.', false);
+            return cb('Ime izvajalca ne sme vsebovati znaka "-" ali znaka "/" ali znaka "\'". Prosimo, izberite drugo ime.', false);
         }
         if (!validFileName.test(req.body.songName)) {
-            return cb('Ime skladbe ne sme vsebovati znaka "-". Prosimo, izberite drugo ime.', false);
+            return cb('Ime skladbe ne sme vsebovati znaka "-" ali znaka "/" ali znaka "\'". Prosimo, izberite drugo ime.', false);
         }
 
         cb(null, true);
@@ -322,11 +322,12 @@ app.post('/add-to-playlist/:songName', checkAuthenticated, (req, res) => {
 
 // Pot za odstranjevanje pesmi z seznama predvajanja
 app.post('/remove-from-playlist/:songName', checkAuthenticated, async (req, res) => {
+    let songName;
     try {
         // Dekodiramo ime pesmi, ki bi jo radi dodali na seznam predvajanja
-        const songName = decodeURIComponent(req.params.songName);
+        songName = decodeURIComponent(req.params.songName);
 
-        //Sestavimo pot do pesmi
+        // Sestavimo pot do pesmi
         const filePath = path.join(playingDir, songName);
 
         // Preveri, ali datoteka obstaja
@@ -339,8 +340,8 @@ app.post('/remove-from-playlist/:songName', checkAuthenticated, async (req, res)
 
         // Preveri, ali se trenutno predvaja ta pesem
         if (currentSong === parseSongDetails(songName).song || currentSong === 'Nobena pesem se ne predvaja trenutno.') {
-            res.status(500).json({ error: 'Ne moreš izbrisati pesmi, ki se trenutno predvaja.' });
-        } else{
+            return res.status(500).json({ error: 'Ne moreš izbrisati pesmi, ki se trenutno predvaja.' });
+        } else {
             // Izbriši datoteko
             await fs.promises.unlink(filePath);
         }
@@ -355,8 +356,9 @@ app.post('/remove-from-playlist/:songName', checkAuthenticated, async (req, res)
             console.error(cas(), "Napaka pri brisanju pesmi z seznama predvajanja: ", songName, " | " ,err, "(", req.user.name, ")");
             res.status(500).json({ error: 'Napaka pri brisanju pesmi.' });
         }
-    }  
+    }
 });
+
 
 // Funkcija namenjena parsanju imena ustvarjalca in pesmi z imena pesmi
 function parseSongDetails(fileName) {
@@ -376,7 +378,9 @@ const radio = new WebRadio({
         console.log(cas(),`[Radio]: ${msg}`);
 
         // Parsanje podatkov o pesmi, ki se trenutno predvaja (hvala knjižnjici, ker ne podpira tega :( ))
-        const match = msg.match(/Now Playing: (.+) \| Bitrate: (\d+)kbps/);
+        const match = msg.match(/Now Playing: (.+) \| Bitrate: ([\d\.]+)kbps/);
+        //console.log (match);
+        //console.log(msg);
         if (match && match.length === 3) {
             const songDetails = parseSongDetails(match[1]);
             radio.currentSong = {
@@ -405,6 +409,7 @@ app.get('/current-song', (req,res) => {
     // Pridobimpo podatke z našega parserja
     const { artist, song } = radio.currentSong || {};
     
+    //console.log(cas(), "Trenutno predvaja pesem: ", artist, " - ", song);
     // Preverimo, ali je uspešno prepoznal izvajalca in pesem
     if (artist !== undefined && song !== undefined) {
         res.json({ artist, song });
