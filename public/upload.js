@@ -38,7 +38,7 @@ fileInput.addEventListener('change', function(event) {
     }
 });
 
-// Prepreči privzeto obnašanje povleci in spusti
+
 const dropArea = document.getElementById('dropArea');
 dropArea.addEventListener('dragover', function(event) {
     event.preventDefault();
